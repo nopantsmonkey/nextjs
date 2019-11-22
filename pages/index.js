@@ -1,4 +1,4 @@
-import React, {Component, useState, useEffect} from 'react';
+import React, {useState, useEffect} from 'react';
 import Layout from '../components/layout';
 import ReactLoading from 'react-loading';
 import fetch from 'isomorphic-fetch';
@@ -19,7 +19,7 @@ function Index() {
     return (
         <>
             <Layout title="Home">
-                <h1>Hello Next.js</h1>
+                <h1>Bitcoin Price Daily Rate</h1>
 
                 {
                     response === null
@@ -44,20 +44,34 @@ function Index() {
 }
 
 function ResponseRender({data}) {
+    const [items, setItems] = useState(data.map(d => ({...d, show: false})));
+    const showTrend = item => {
+        setItems([...items].map(i => ({
+            ...i,
+            show: i.code === item.code && !i.show
+        })));
+    };
+
     return (
         <>
             <div className="list-group">
                 {
-                    data.map(({code, rate_float}) => (
-                        <div key={code}>
-                            <div className="card border-primary mb-3" style={{'maxWidth': '40rem'}}>
-                                <div className="card-header">
-                                    <a className="list-group-item list-group-item-action active">1 BTC equals {rate_float} {code} <button>Show Monthly Trend</button></a>
+                    items.map(item => {
+                        const {code, rate_float, show} = item;
+                        return (
+                            <div key={code}>
+                                <div className="card border-primary mb-3" style={{'maxWidth': '40rem'}}>
+                                    <div className="card-header">
+                                        <a className="list-group-item list-group-item-action active">1 BTC equals {rate_float} {code}
+                                            <button onClick={_ => showTrend(item)}>{show ? 'Hide' : 'Show'} Monthly Trend</button>
+                                        </a>
+                                    </div>
+                                    {show && <Trend type={code} show={show} />}
+
                                 </div>
-                                <Trend type={code} show={false}/>
                             </div>
-                        </div>
-                    ))
+                        )
+                    })
                 }
             </div>
 
@@ -65,11 +79,10 @@ function ResponseRender({data}) {
                 .list-group-item.list-group-item-action button {
                     float: right;
                     clear: both;
-                    
                 }
             `}</style>
         </>
-    )
+    );
 }
 
 export default Index;

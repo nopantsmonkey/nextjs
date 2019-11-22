@@ -1,5 +1,6 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import fetch from 'isomorphic-fetch';
+import ReactLoading from 'react-loading';
 
 async function api() {
     const promise = await fetch('https://api.coindesk.com/v1/bpi/historical/close.json');
@@ -9,14 +10,45 @@ async function api() {
 export default function Trend({type, show}) {
     const [trend, setTrend] = useState(null);
     useEffect(() => {
-        api().then(r => setTrend(r));
-    }, [api]);
+        if (trend === null) {
+            getToken();
+        }
+    });
+
+    useEffect(() => {
+        if (trend !== null) {
+            var options = {
+                title: 'Bitcoin Price',
+                curveType: 'function',
+                legend: {position: 'bottom'},
+                'chartArea.width': '600',
+                'chartArea.left': '0',
+                width: 490
+            };
+
+            var chart = new google.visualization.LineChart(document.querySelector('.chart-section-' + type));
+            chart.draw(trend, options);
+        }
+    }, [trend]);
+
+    const getToken = async () => {
+        let data = await api();
+        const chartData = Object.entries(data.bpi);
+        chartData.unshift(['Year', 'Price']);
+        setTrend(google.visualization.arrayToDataTable(chartData));
+    };
 
     return <>
-        <div className="card-body" style={{'display': show ? 'block' : 'none'}}>
-            <h4 className="card-title">Primary card title</h4>
-            <p className="card-text">Some quick example text to build on the card title and make
-                up the bulk of the card's content.</p>
-        </div>
+        {trend === null
+        ? <div className="loader"><ReactLoading type="spin" color="#ccd"/></div>
+        : <div className={`chart-section-${type}`}
+               style={{'display': show ? 'block' : 'none', 'width': '900px', 'height': '300px'}}></div>}
+
+        <style jsx>{`
+            .loader {
+                margin: 0 auto;
+                text-align: center;
+            }
+        `}</style>
     </>
 }
